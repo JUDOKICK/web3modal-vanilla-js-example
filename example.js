@@ -9,6 +9,8 @@ const Web3Modal = window.Web3Modal.default;
 const WalletConnectProvider = window.WalletConnectProvider.default;
 const Fortmatic = window.Fortmatic;
 const evmChains = window.evmChains;
+const Portis = window.Portis;
+const Torus = window.Torus;
 
 // Web3modal instance
 let web3Modal
@@ -29,17 +31,20 @@ function init() {
   console.log("Initializing example");
   console.log("WalletConnectProvider is", WalletConnectProvider);
   console.log("Fortmatic is", Fortmatic);
+  console.log("Torus is", Torus);
+  console.log("Portis is", Portis);
   console.log("window.web3 is", window.web3, "window.ethereum is", window.ethereum);
 
   // Check that the web page is run in a secure context,
   // as otherwise MetaMask won't be available
+  /* 
   if(location.protocol !== 'https:') {
     // https://ethereum.stackexchange.com/a/62217/620
     const alert = document.querySelector("#alert-error-https");
     alert.style.display = "block";
     document.querySelector("#btn-connect").setAttribute("disabled", "disabled")
     return;
-  }
+  } */
 
   // Tell Web3modal what providers we have available.
   // Built-in web browser provider (only one can exist as a time)
@@ -52,12 +57,32 @@ function init() {
         infuraId: "8043bb2cf99347b1bfadfb233c5325c0",
       }
     },
-
+	portis: {
+		display: {
+		name: "Email Login",
+		description: "Sign in with Email"
+	},
+    package: Portis, // required
+    options: {
+      id: "2ae0ea6a-7a64-41e5-a95a-35bd2cb2f4fa" // required
+		}
+	},
+	torus: {
+	display: {
+		name: "Social Login",
+		description: "Sign in with Gmail/Facebook/etc"
+	},
+    package: Torus, // required
+    },
     fortmatic: {
+		display: {
+		name: "Email/SMS",
+		description: "Sign in with Email or SMS"
+	},
       package: Fortmatic,
       options: {
         // Mikko's TESTNET api key
-        key: "pk_test_391E26A3B43A3350"
+        key: "pk_test_BE5846D5376FCF67"
       }
     }
   };
@@ -212,6 +237,51 @@ async function onDisconnect() {
 }
 
 
+function launchTransak() {
+      let transak = new TransakSDK.default({
+        apiKey: '590146f9-b285-4567-b36a-64ec1181d8b3', // Your API Key
+        environment: 'STAGING', // STAGING/PRODUCTION
+        defaultCryptoCurrency: 'ETH',
+        walletAddress: '', // Your customer wallet address
+        themeColor: '000000', // App theme color in hex
+        fiatCurrency: '', // INR/GBP
+        email: '', // Your customer email address
+        redirectURL: '',
+        hostURL: window.location.origin,
+        widgetHeight: '550px',
+        widgetWidth: '100%'
+      });
+      transak.init();
+      // To get all the events
+      transak
+        .on(transak.ALL_EVENTS, (data) => {
+          console.log(data)
+        });
+      // This will trigger when the user marks payment is made.
+      transak.on(transak.EVENTS.TRANSAK_ORDER_SUCCESSFUL, (orderData) => {
+        console.log(orderData);
+        transak.close();
+      });
+}
+
+
+
+function onTransakConnect() {
+
+	launchTransak();
+}
+
+/**
+ * Disconnect wallet button pressed.
+ */
+async function onTransakDisconnect() {
+
+  transak.close();
+
+  // Set the UI back to the initial state
+  document.querySelector("#prepare").style.display = "block";
+  document.querySelector("#connected").style.display = "none";
+}
 /**
  * Main entry point.
  */
@@ -219,4 +289,6 @@ window.addEventListener('load', async () => {
   init();
   document.querySelector("#btn-connect").addEventListener("click", onConnect);
   document.querySelector("#btn-disconnect").addEventListener("click", onDisconnect);
+  document.querySelector("#transak-connect").addEventListener("click", onTransakConnect);
+  document.querySelector("#transak-disconnect").addEventListener("click", onTransakDisconnect);
 });
